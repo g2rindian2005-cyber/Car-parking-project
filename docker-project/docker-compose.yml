@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+
+  frontend:
+    build: ./frontend
+    container_name: parking-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    container_name: parking-backend
+    ports:
+      - "5000:5000"

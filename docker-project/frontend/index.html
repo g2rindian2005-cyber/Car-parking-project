@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🚗 Smart Parking Management</h1>
+
+    <div class="card">
+
+        <input type="text" id="carNumber" placeholder="Enter Vehicle Number">
+
+        <button onclick="parkCar()">Park Vehicle</button>
+
+    </div>
+
+    <div class="stats">
+
+        <div class="box">
+            <h2 id="totalCars">0</h2>
+            <p>Total Parked</p>
+        </div>
+
+        <div class="box">
+            <h2 id="availableSlots">50</h2>
+            <p>Available Slots</p>
+        </div>
+
+    </div>
+
+    <div class="table-card">
+
+        <h2>Parked Vehicles</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Vehicle Number</th>
+                    <th>Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="vehicleList">
+
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
