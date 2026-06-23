@@ -1,4 +1,4 @@
-name: CI-CD to EKS
+name: Car Parking CI-CD
 
 on:
   push:
@@ -6,15 +6,23 @@ on:
       - main
 
 env:
-  DOCKER_USER: jawandockerhub
+  AWS_REGION: us-east-1
+  CLUSTER_NAME: car-parking-eks
 
 jobs:
-  build-and-push:
+  build-push-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
       - name: Login Docker Hub
         uses: docker/login-action@v3
@@ -36,36 +44,43 @@ jobs:
       - name: Push Backend Image
         run: docker push jawandockerhub/carparking-backend:latest
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
+      - name: Install eksctl
+        run: |
+          curl -sLO https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz
+          tar -xzf eksctl_Linux_amd64.tar.gz
+          sudo mv eksctl /usr/local/bin
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Check/Create EKS Cluster
+        run: |
+          if eksctl get cluster --region $AWS_REGION | grep $CLUSTER_NAME
+          then
+            echo "Cluster already exists"
+          else
+            eksctl create cluster \
+              --name $CLUSTER_NAME \
+              --region $AWS_REGION \
+              --nodes 2
+          fi
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
 
-      - name: Update kubeconfig
+      - name: Configure kubeconfig
         run: |
           aws eks update-kubeconfig \
-          --region ${{ secrets.AWS_REGION }} \
-          --name ${{ secrets.EKS_CLUSTER_NAME }}
+            --region $AWS_REGION \
+            --name $CLUSTER_NAME
 
-      - name: Deploy to Kubernetes
+      - name: Verify Cluster
         run: |
-          kubectl apply -f k8s/
+          kubectl get nodes
 
-          kubectl rollout restart deployment/frontend
-          kubectl rollout restart deployment/backend
+      - name: Deploy Application
+        run: |
+          kubectl apply -f docker-project/k8s/
 
-          kubectl rollout status deployment/frontend
-          kubectl rollout status deployment/backend
+      - name: Verify Deployment
+        run: |
+          kubectl get deployments
+          kubectl get pods
+          kubectl get svc
